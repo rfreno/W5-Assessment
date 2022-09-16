@@ -1,6 +1,60 @@
+require('dotenv').config()
 
+const { CONNECTION_STRING } = process.env;
+
+const Sequelize = require('sequelize')
+
+const sequelize = new Sequelize(CONNECTION_STRING, {
+    dialect: 'postgres',
+    dialectOptions: {
+        ssl: {
+            rejectUnauthorized: false
+        }
+    }
+})
 
 module.exports = {
+    getCountries: (req, res) => {
+         sequelize.query(`
+            select * from countries;
+         `)
+         .then( dbRes => res.status(200).send(dbRes[0]) )
+         .catch( err => console.log(err) )
+
+    },
+
+    createCity: (req, res) => {
+        const { name, rating, countryId } = req.body
+        console.log(req.body)
+        sequelize.query(`
+            insert into cities (name, rating, countryId)
+            values ('${name}',${rating},${countryId});
+        `)
+
+    },
+
+    getCities: (req, res) => {
+        sequelize.query(`
+            select city.city_id, city.name cname, city.rating, country.country_id, country.name
+            from cities city
+            join countries country on city.countryId = country.country_id
+            order by city.rating desc;
+        `)
+        .then( dbRes => res.status(200).send(dbRes[0]) )
+        .catch( err => console.log(err) )
+
+    },
+
+    deleteCity: (req,res) => {
+        const { id } = req.params
+        sequelize.query(`
+            delete from cities where city_id = ${id};
+        `)
+        .then( dbRes => res.status(200).send(dbRes[0]) )
+        .catch( err => console.log(err) )
+
+    },
+
     seed: (req, res) => {
         sequelize.query(`
             drop table if exists cities;
@@ -11,7 +65,17 @@ module.exports = {
                 name varchar
             );
 
-            *****YOUR CODE HERE*****
+            create table cities (
+                city_id serial primary key,
+                name varchar,
+                rating integer,
+                countryId integer
+            );
+
+            insert into cities (name, rating, countryId)
+            values ('City1', 5, 20),
+            ('City2',3,27),
+            ('City3',1,35);
 
             insert into countries (name)
             values ('Afghanistan'),
